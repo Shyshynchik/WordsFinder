@@ -1,0 +1,10 @@
+springdoc:
+  api-docs:
+    path: /swagger/config
+  swagger-ui:
+    path: /swagger
+    disable-swagger-default-url: true
+
+spring:
+  webflux:
+    base-path: api
