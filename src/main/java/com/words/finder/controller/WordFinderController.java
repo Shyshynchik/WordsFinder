@@ -22,7 +22,7 @@ public class WordFinderController {
     private final WordFilterService wordFilterService;
     private final Mapper<FindDto, UserInputFindDto> mapper;
 
-    @Operation(description = "Ищет слова по маске, а также по списку включеных, исключенных слов и исключающих масок")
+    @Operation(description = "Ищет слова по маске, а также по списку включенных, исключенных слов и исключающих масок")
     @PostMapping("/find")
     public ResponseEntity<Mono<List<String>>> findWord(
             @RequestBody UserInputFindDto findRequest
