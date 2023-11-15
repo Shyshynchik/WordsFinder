@@ -1,7 +1,7 @@
 package com.words.finder.service;
 
 import com.words.finder.api.service.FinderApi;
-import com.words.finder.model.FindRequest;
+import com.words.finder.model.FindDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -17,27 +17,23 @@ public class WordFilterServiceImpl implements WordFilterService {
     private final FinderApi finderApi;
 
     @Override
-    public Mono<List<String>> findWords(FindRequest findRequest) {
-        return finderApi.findByMask(findRequest.getMask())
+    public Mono<List<String>> findWords(FindDto findDto) {
+        return finderApi.findByMask(findDto.getMask())
                 .map(response -> mapWordsByLetters(response.getResult()))
-                .map(words -> filter(words, findRequest));
-    }
-
-    private Set<Character> setToUpperCase(Set<Character> characterSet) {
-        return characterSet.stream().map(Character::toUpperCase).collect(Collectors.toSet());
+                .map(words -> filterWords(words, findDto));
     }
 
     private Map<Character, Set<String>> mapWordsByLetters(List<String> words) {
-        Map<Character, Set<String>> map = new HashMap<>();
+        Map<Character, Set<String>> wordsByLetters = new HashMap<>();
 
         for (var word : words) {
-            addWordsIndexedByLetters(map, word);
+            addWordIndexedByLetters(wordsByLetters, word);
         }
 
-        return map;
+        return wordsByLetters;
     }
 
-    private void addWordsIndexedByLetters(Map<Character, Set<String>> map, String word) {
+    private void addWordIndexedByLetters(Map<Character, Set<String>> map, String word) {
         List<Character> charactersInWord = word.chars()
                 .mapToObj(c -> (char) c)
                 .map(Character::toUpperCase)
@@ -52,15 +48,11 @@ public class WordFilterServiceImpl implements WordFilterService {
         });
     }
 
-    private List<String> filter(Map<Character, Set<String>> words, FindRequest findRequest) {
-        var excludedLetters = setToUpperCase(findRequest.getExcludedLetters());
-        var includedLetters = setToUpperCase(findRequest.getIncludedLetters());
+    private List<String> filterWords(Map<Character, Set<String>> words, FindDto findDto) {
+        var excludedLetters = setToUpperCase(findDto.getExcludedLetters());
+        var includedLetters = setToUpperCase(findDto.getIncludedLetters());
 
-        var excludedWords = words.entrySet().stream()
-                .filter(word -> excludedLetters.contains(word.getKey()))
-                .map(Map.Entry::getValue)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+        var excludedWords = getExcludedWords(words, excludedLetters);
 
         var filteredWords = words.entrySet().stream()
                 .filter(word -> !excludedLetters.contains(word.getKey()))
@@ -74,7 +66,19 @@ public class WordFilterServiceImpl implements WordFilterService {
 
         var includedWords = getIntersection(filteredWords);
 
-        return new ArrayList<>(excludeWordsByMask(includedWords, findRequest.getExcludedMasks()));
+        return new ArrayList<>(excludeWordsByMask(includedWords, findDto.getExcludedMasks()));
+    }
+
+    private static Set<String> getExcludedWords(Map<Character, Set<String>> words, Set<Character> excludedLetters) {
+        return words.entrySet().stream()
+                .filter(word -> excludedLetters.contains(word.getKey()))
+                .map(Map.Entry::getValue)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<Character> setToUpperCase(Set<Character> characterSet) {
+        return characterSet.stream().map(Character::toUpperCase).collect(Collectors.toSet());
     }
 
     private Set<String> sortWords(Map<Character, Set<String>> mapLettersToWords) {

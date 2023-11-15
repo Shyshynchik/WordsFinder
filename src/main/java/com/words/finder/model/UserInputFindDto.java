@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-public class NewFindRequest {
+public class UserInputFindDto {
     @Schema(example = "**ав*")
     private String mask;
     private String excludedLetters = "";

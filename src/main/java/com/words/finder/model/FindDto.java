@@ -8,7 +8,7 @@ import java.util.Set;
 
 @Data
 @Builder
-public class FindRequest {
+public class FindDto {
     @Schema(example = "**ав*")
     private String mask;
     private Set<Character> excludedLetters;
